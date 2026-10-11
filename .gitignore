@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+users.db
+reports/*.json
+reports/summary.md
+reports/versions.txt
