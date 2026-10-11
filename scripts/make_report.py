@@ -35,13 +35,13 @@ else:
 #OSV-Scanner
 print("\nOSV-Scanner (SCA)\n")
 if osv:
-    print(" Библиотека Версия Кол-во уязвимостей Примеры ID |")
+    print(" Библиотека Версия Кол-во уязвимостей Примеры ID ")
     for res in osv.get("results", []):
         for pkg in res.get("packages", []):
             info = pkg["package"]
             vulns = pkg.get("vulnerabilities", [])
             ids = ", ".join(v["id"] for v in vulns[:3])
-            print(f"| {info['name']} | {info['version']} | {len(vulns)} | {ids} |")
+            print(f" {info['name']} {info['version']} {len(vulns)} {ids} ")
 else:
     print("Отчёта нет.")
 
