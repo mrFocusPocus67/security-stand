@@ -22,15 +22,13 @@ jobs:
 
       - name: Папка для отчётов
         run: mkdir -p reports
-
-      #Bandit -SAST
+        
       - name: Bandit
         run: |
           pip install bandit
           echo "Bandit: $(pip show bandit | grep Version | cut -d' ' -f2)" >> reports/versions.txt
           bandit -r app -f json -o reports/bandit.json || true
 
-      #OSV-Scanner - SCA 
       - name: OSV-Scanner
         run: |
           curl -sSL -o osv-scanner https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64
@@ -38,7 +36,6 @@ jobs:
           echo "OSV-Scanner: $(./osv-scanner --version | head -n 1)" >> reports/versions.txt
           ./osv-scanner scan source -r app --format json > reports/osv.json || true
 
-      # Gitleaks
       - name: Gitleaks
         run: |
           curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz | tar -xz gitleaks
