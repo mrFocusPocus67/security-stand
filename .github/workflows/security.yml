@@ -1,54 +1,90 @@
-name: Security checks
+name: Security Scan (SBOM + Secrets)
 
 on:
-  push:
-  pull_request:
   workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  TARGET_REPO: OWASP/NodeGoat
 
 jobs:
-  security:
+  scan:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
-      - name: Checkout
+      - name: Checkout целевого проекта
         uses: actions/checkout@v4
         with:
+          repository: ${{ env.TARGET_REPO }}
+          path: target
           fetch-depth: 0
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Установка Syft
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh \
+            | sudo sh -s -- -b /usr/local/bin
+
+      - name: Запуск Syft
+        run: |
+          syft scan dir:./target -o cyclonedx-json=syft-results.cdx.json || true
+
+      - name: Установка Node.js
+        uses: actions/setup-node@v4
         with:
-          python-version: "3.11"
+          node-version: '20'
 
-      - name: Папка для отчётов
-        run: mkdir -p reports
-        
-      - name: Bandit
-        run: |
-          pip install bandit
-          echo "Bandit: $(pip show bandit | grep Version | cut -d' ' -f2)" >> reports/versions.txt
-          bandit -r app -f json -o reports/bandit.json || true
+      - name: Установка cdxgen
+        run: npm install -g @cyclonedx/cdxgen
 
-      - name: OSV-Scanner
+      - name: Запуск cdxgen
         run: |
-          curl -sSL -o osv-scanner https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64
-          chmod +x osv-scanner
-          echo "OSV-Scanner: $(./osv-scanner --version | head -n 1)" >> reports/versions.txt
-          ./osv-scanner scan source -r app --format json > reports/osv.json || true
+          cdxgen -r -o cdxgen-results.json ./target || true
 
-      - name: Gitleaks
+      - name: Установка Gitleaks
         run: |
-          curl -sSL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz | tar -xz gitleaks
-          echo "Gitleaks: 8.18.4" >> reports/versions.txt
-          ./gitleaks detect --source . --report-format json --report-path reports/gitleaks.json --no-banner || true
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz \
+            | sudo tar -xz -C /usr/local/bin gitleaks
 
-      - name: Сводная таблица
+      - name: Запуск Gitleaks
         run: |
-          python scripts/make_report.py > reports/summary.md
-          cat reports/summary.md >> $GITHUB_STEP_SUMMARY
-          
-      - name: Сохраняем отчёты
+          gitleaks detect --source ./target \
+            --report-format json \
+            --report-path gitleaks-results.json \
+            --no-banner || true
+            
+      - name: Установка TruffleHog
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh \
+            | sudo sh -s -- -b /usr/local/bin
+
+      - name: Запуск TruffleHog
+        run: |
+          # --no-verification: не проверяем найденные ключи на живых сервисах (быстрее и безопаснее)
+          trufflehog git file://$PWD/target \
+            --json --no-update --no-verification \
+            > trufflehog-results.json || true
+
+      - name: Сводка по результатам
+        run: |
+          echo "Syft:       $(jq '.components | length' syft-results.cdx.json) компонентов"
+          echo "cdxgen:     $(jq '.components | length' cdxgen-results.json) компонентов"
+          echo "Gitleaks:   $(jq 'length' gitleaks-results.json) находок"
+          echo "TruffleHog: $(wc -l < trufflehog-results.json) находок"
+        continue-on-error: true
+
+      - name: Загрузка артефактов
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: security-reports
-          path: reports/
+          path: |
+            syft-results.cdx.json
+            cdxgen-results.json
+            gitleaks-results.json
+            trufflehog-results.json
+          if-no-files-found: warn
