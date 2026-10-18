@@ -1,4 +1,4 @@
-name: Security Scan (SBOM + Secrets)
+name: Secret Scanning (Gitleaks + TruffleHog)
 
 on:
   workflow_dispatch:
@@ -24,27 +24,6 @@ jobs:
           path: target
           fetch-depth: 0
 
-      - name: Установка Syft
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh \
-            | sudo sh -s -- -b /usr/local/bin
-
-      - name: Запуск Syft
-        run: |
-          syft scan dir:./target -o cyclonedx-json=syft-results.cdx.json || true
-
-      - name: Установка Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Установка cdxgen
-        run: npm install -g @cyclonedx/cdxgen
-
-      - name: Запуск cdxgen
-        run: |
-          cdxgen -r -o cdxgen-results.json ./target || true
-
       - name: Установка Gitleaks
         run: |
           curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz \
@@ -56,7 +35,7 @@ jobs:
             --report-format json \
             --report-path gitleaks-results.json \
             --no-banner || true
-            
+
       - name: Установка TruffleHog
         run: |
           curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh \
@@ -69,10 +48,8 @@ jobs:
             --json --no-update --no-verification \
             > trufflehog-results.json || true
 
-      - name: Сводка по результатам
+      - name: Сводка по результатам (Секреты)
         run: |
-          echo "Syft:       $(jq '.components | length' syft-results.cdx.json) компонентов"
-          echo "cdxgen:     $(jq '.components | length' cdxgen-results.json) компонентов"
           echo "Gitleaks:   $(jq 'length' gitleaks-results.json) находок"
           echo "TruffleHog: $(wc -l < trufflehog-results.json) находок"
         continue-on-error: true
@@ -81,10 +58,8 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: security-reports
+          name: secret-scanning-reports
           path: |
-            syft-results.cdx.json
-            cdxgen-results.json
             gitleaks-results.json
             trufflehog-results.json
           if-no-files-found: warn
