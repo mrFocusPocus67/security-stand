@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  TARGET_REPO: dolevf/Damn-Vulnerable-GraphQL-Application
+  TARGET_REPO: SasanLabs/VulnerableApp
 
 jobs:
   scan:
