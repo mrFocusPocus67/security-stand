@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  TARGET_REPO: afaqops/XSS-Project
+  TARGET_REPO: fortify/IWA-Java
 
 jobs:
   scan:
