@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  TARGET_REPO: vulnbookstore/vulnbookstore
+  TARGET_REPO: dolevf/Damn-Vulnerable-GraphQL-Application
 
 jobs:
   scan:
