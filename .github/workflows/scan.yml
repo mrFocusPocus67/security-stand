@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  TARGET_REPO: WebGoat/WebGoat
+  TARGET_REPO: digininja/DVWA
 
 jobs:
   scan:
