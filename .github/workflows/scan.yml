@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  TARGET_REPO: adeyosemanputra/pygoat
+  TARGET_REPO: afaqops/XSS-Project
 
 jobs:
   scan:
