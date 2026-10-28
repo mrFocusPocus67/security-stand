@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  TARGET_REPO: OWASP/NodeGoat
+  TARGET_REPO: adeyosemanputra/pygoat
 
 jobs:
   scan:
