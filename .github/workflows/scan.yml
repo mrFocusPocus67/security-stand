@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  TARGET_REPO: CSPF-Founder/JavaVulnerableLab
+  TARGET_REPO: vulnbookstore/vulnbookstore
 
 jobs:
   scan:
