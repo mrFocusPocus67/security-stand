@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  TARGET_REPO: digininja/DVWA
+  TARGET_REPO: OWASP/NodeGoat
 
 jobs:
   scan:
